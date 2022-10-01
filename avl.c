@@ -1,10 +1,4 @@
-/******************************************************************************/
-/*              Este programa gerencia arvores AVL                            */
-/*  Arvores AVL sao arvores balanceadas na altura.                            */
-/*  O nome AVL vem de seus criadores Adelson Velsky e Landis, cuja primeira   */
-/*    referência encontra-se no documento "Algoritmos para organização da     */
-/*    informação" de 1962.                                                    */
-/******************************************************************************/
+
 
 #include <stdio.h>
 #include <malloc.h>
