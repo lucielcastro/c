@@ -1,474 +1,226 @@
-
-
 #include <stdio.h>
-#include <malloc.h>
-#define true 1
-#define false 0
+#include <stdlib.h>
 
-typedef int bool;
-typedef int TIPOCHAVE;
+typedef struct no
+{
+  int valor, altura;
+  struct no *direita, *esquerda;
+} No;
 
-typedef struct aux {
-	TIPOCHAVE chave;
-	struct aux *esq;
-	struct aux *dir;
-	int bal; // fator de balanceamento (0, -1 ou +1) => alt. direita - alt. esquerda
-} NO, *PONT;
+No *criar(int numero)
+{
+  No *NovoNo = (No *)malloc(sizeof(No));
 
-/* cria um novo (aloca memoria e preenche valores) no com chave=ch e retorna 
-       seu endereco */
-PONT criarNovoNo(TIPOCHAVE ch){
-	PONT novoNo = (PONT)malloc(sizeof(NO));
-	novoNo->esq = NULL;
-	novoNo->dir = NULL;
-	novoNo->chave = ch;
-	novoNo->bal = 0;
-	return novoNo;
+  NovoNo->valor = numero;
+  NovoNo->esquerda = NULL;
+  NovoNo->direita = NULL;
+  NovoNo->altura = 0;
+  return NovoNo;
 }
 
-
-// Retorna o maior valor entre dois inteiros
-int max(int a, int b){
-	if (a>b) return a;
-	return b;
+// Calculando a altura do maior No da arvore
+int maiorAltura(int num1, int num2)
+{
+  return (num1 > num2) ? num1 : num2;
 }
 
-// Retorna a altura de uma (sub-)arvore
-int altura(PONT p){
-	if (!p) return -1;
-	else return 1 + max(altura(p->esq),altura(p->dir));
+// Calculando a altura do No da arvore
+int alturaNo(No *No)
+{
+  if (No == NULL)
+    return -1;
+  else
+    return No->altura;
 }
 
-
-/* Exibe arvore Em Ordem         */
-void exibirArvoreEmOrdem(PONT raiz){
-	if (raiz == NULL) return;
-	exibirArvoreEmOrdem(raiz->esq);
-	printf("%i ",raiz->chave);
-	exibirArvoreEmOrdem(raiz->dir);
+// Balanceando a arvore
+int fatorBalanceamento(No *No)
+{
+  if (No)
+    return (alturaNo(No->esquerda) - alturaNo(No->direita));
+  else
+    return 0;
 }
 
-/* Exibe arvore Pre Ordem         */
-void exibirArvorePreOrdem(PONT raiz){
-	if (raiz == NULL) return;
-	printf("%i ",raiz->chave);
-	exibirArvorePreOrdem(raiz->esq);
-	exibirArvorePreOrdem(raiz->dir);
+// Rotacao simples a esquerda
+No *rotacaoEsquerda(No *raiz)
+{
+  No *pai, *filho;
+
+  pai = raiz->direita;
+  filho = pai->esquerda;
+
+  pai->esquerda = raiz;
+  raiz->direita = filho;
+
+  raiz->altura = maiorAltura(alturaNo(raiz->esquerda), alturaNo(raiz->direita)) + 1;
+  pai->altura = maiorAltura(alturaNo(pai->esquerda), alturaNo(pai->direita)) + 1;
+
+  return pai;
 }
 
-/* Exibe arvore Pos Ordem         */
-void exibirArvorePosOrdem(PONT raiz){
-	if (raiz == NULL) return;
-	exibirArvorePreOrdem(raiz->esq);
-	exibirArvorePreOrdem(raiz->dir);
-	printf("%i ",raiz->chave);
+// Rotacao simples a direita
+No *rotacaoDireita(No *raiz)
+{
+  No *pai, *filho;
+
+  pai = raiz->esquerda;
+  filho = pai->direita;
+
+  pai->direita = raiz;
+  raiz->esquerda = filho;
+
+  raiz->altura = maiorAltura(alturaNo(raiz->esquerda), alturaNo(raiz->direita)) + 1;
+  pai->altura = maiorAltura(alturaNo(pai->esquerda), alturaNo(pai->direita)) + 1;
+
+  return pai;
 }
 
-/* Exibe arvore Em Ordem (com parenteses para os filhos)    */
-void exibirArvore(PONT raiz){
-	if (raiz == NULL) return;
-	printf("%i[%i]",raiz->chave,raiz->bal);
-	printf("(");     
-	exibirArvore(raiz->esq);
-	exibirArvore(raiz->dir);
-	printf(")");     
+// Rotacao a direita e a esquerda
+No *rotacaoDireitaEsquerda(No *raiz)
+{
+  raiz->direita = rotacaoDireita(raiz->direita);
+  return rotacaoEsquerda(raiz);
 }
 
-/* Exibe arvore Pre-Ordem indicando pai de cada no    */
-void exibirArvore2(PONT raiz, TIPOCHAVE chavePai){
-	if (raiz == NULL) return;
-	printf("(%i,%i) ",chavePai,raiz->chave);
-	exibirArvore2(raiz->esq,raiz->chave);
-	exibirArvore2(raiz->dir,raiz->chave);
+// Rotacao a esquerda e a direita
+No *rotacaoEsquerdaDireita(No *raiz)
+{
+  raiz->esquerda = rotacaoEsquerda(raiz->esquerda);
+  return rotacaoDireita(raiz);
 }
 
+// Balanceamento da arvore
+No *balanceamento(No *raiz)
+{
+  int aux = fatorBalanceamento(raiz);
 
-// Verifica se árvore é AVL
-bool ehAVL(PONT p){
-	int e,d;
-	bool ok = true;
-	if(p){
-		ok = ehAVL(p->esq);
-		if(ok) ok = ehAVL(p->dir);
-		if(ok){
-			e = altura(p->esq);
-			d = altura(p->dir);
-			if(e-d > 1 || e-d < -1) ok = false;  
-			else ok = true;
-		}
-	}
-	return(ok);
+  if (aux < -1 && fatorBalanceamento(raiz->direita) <= 0)
+    raiz = rotacaoEsquerda(raiz);
+  else if (aux > 1 && fatorBalanceamento(raiz->esquerda) >= 0)
+    raiz = rotacaoDireita(raiz);
+  else if (aux > 1 && fatorBalanceamento(raiz->esquerda) < 0)
+    raiz = rotacaoEsquerdaDireita(raiz);
+  else if (aux < -1 && fatorBalanceamento(raiz->direita) > 0)
+    raiz = rotacaoDireitaEsquerda(raiz);
+
+  return raiz;
 }
 
-// Verifica se árvore é AVL
-bool ehAVL2(PONT p, int* alt){
-    if (!p){
-       *alt=-1;
-       return true;
-    }
-    bool res;
-    int d, e;
-    res = ehAVL2(p->dir,&d);
-    if (!res) return false;
-    res = ehAVL2(p->esq,&e);
-    if (!res) return false;
-    if (d-e != p->bal) printf("### O campo 'bal' do no '%i' esta com valor incorreto de balanceamento. ###\n",p->chave);
-    if ((d-e<-1) || (d-e>1)) return false;
-	*alt = max(d,e)+1; 
-	return true;	
-}
-
-int atualizarBalanceamentoTotal(PONT raiz){
-	if (!raiz) return 0;
-	int d = atualizarBalanceamentoTotal(raiz->dir);
-	int e = atualizarBalanceamentoTotal(raiz->esq);
-	raiz->bal = d-e;
-	return max(d,e)+1;
-}
-
-
-/* Rotações à direita (LL e LR) 
-   Retornará o endereço do nó que será a nova raiz da subárvore originalmente 
-   iniciada por p */
-PONT rotacaoL(PONT p){
-	printf("Rotacao a esquerda, problema no no: %i\n",p->chave);
-	PONT u, v;
-	u = p->esq;
-	if(u->bal == -1) {   // LL
-		p->esq = u->dir;
-		u->dir = p;
-		p->bal = 0;
-		u->bal = 0;
-		return u;
-	} else if (u->bal == 1) {  // LR
-		v = u->dir;
-		u->dir = v->esq;
-		v->esq = u;
-		p->esq = v->dir;
-		v->dir = p;
-		if(v->bal == -1) p->bal = 1;
-		else p->bal = 0;
-		if(v->bal == 1) u->bal = -1;
-		else u->bal = 0;
-		v->bal = 0;
-		return v;
-	}else{   // caso necessario apenas para a exclusao (u->bal == 0)
-		p->esq = u->dir;
-		u->dir = p;
-		// p->bal = -1;    desnecessario pois o balanceamento de p nao chegou a ser mudado para -2
-		u->bal = 1;
-		return u;
-	}
-}
-
-/* Rotações à esquerda (RR e RL) 
-   Retornará o endereço do nó que será a nova raiz da subárvore originalmente 
-   iniciada por p */
-PONT rotacaoR(PONT p){
-	printf("Rotacao a direita, problema no no: %i\n",p->chave);
-	PONT u, v;
-	u = p->dir;
-	if(u->bal == 1) {   // RR
-		p->dir = u->esq;
-		u->esq = p;
-		p->bal = 0;
-		u->bal = 0;
-		return u;
-	} else if (u->bal == -1){  // RL
-		v = u->esq;
-		u->esq = v->dir;
-		v->dir = u;
-		p->dir = v->esq;
-		v->esq = p;
-		if(v->bal == 1) p->bal = -1;
-		else p->bal = 0;
-		if(v->bal == -1) u->bal = 1;
-		else u->bal = 0;
-		v->bal = 0;
-		return v;
-	}else{   // caso necessario apenas para a exclusao (u->bal == 0)
-		p->dir = u->esq;
-		u->esq = p;
-		u->bal = -1;
-		// p->bal = 1;    desnecessario pois o balanceamento de p nao chegou a ser mudado para 2
-		return u;	
-	}
-}
-
-
-
-/* Inserção AVL: p é inicializado com o endereco do nó raiz e 
-   *alterou com false                                         */
-void inserirAVL(PONT* pp, TIPOCHAVE ch, bool* alterou){
-	PONT p = *pp;
-	if(!p){
-		*pp = criarNovoNo(ch);
-		*alterou = true;
-	} else {
-if(ch == p->chave) *alterou = false;
-		else if(ch <= p->chave) {
-			inserirAVL(&(p->esq), ch, alterou);
-			if(*alterou)
-				switch (p->bal) {
-					case 1 : p->bal = 0;
-					*alterou = false;
-					break;
-					case 0 : p->bal = -1;
-					break;
-					case -1: *pp = rotacaoL(p);
-					*alterou = false;
-					break;
-				}
-		} else {
-			inserirAVL(&(p->dir), ch, alterou);
-			if(*alterou)
-				switch (p->bal) {
-					case -1: p->bal = 0;
-					*alterou = false;
-					break;
-					case 0 : p->bal = 1;
-					break;
-					case 1 : *pp = rotacaoR(p);
-					*alterou = false;
-					break;
-				}
-		}
-	}
-}
-
-
-/* retorna o endereco do NO que contem chave=ch ou NULL caso a chave nao seja
-       encontrada. Utiliza busca binaria recursiva                                */
-PONT buscaBinaria(TIPOCHAVE ch, PONT raiz){
-	if (raiz == NULL) return NULL;
-	if (raiz->chave == ch) return raiz;
-	if (raiz->chave<ch) 
-		return buscaBinaria(ch,raiz->dir);
-	return buscaBinaria(ch,raiz->esq);
-}  
-
-
-// Busca binária não recursiva devolvendo o nó pai
-PONT buscaNo(PONT raiz, TIPOCHAVE ch, PONT *pai){
-	PONT atual = raiz;
-	*pai = NULL;
-	while (atual) {
-		if(atual->chave == ch)
-			return(atual);
-		*pai = atual;
-		if(ch < atual->chave) atual = atual->esq;
-		else atual = atual->dir;
-	}
-	return(NULL);
-}
-
-/* Auxilir da funcao excluirChave, procura a maior chave menor que a chave que 
-   serah excluida            */
-PONT maiorAEsquerda(PONT p, PONT *ant){
-  *ant = p;
-  p = p->esq;
-  while (p->dir) {
-    *ant = p;
-    p = p->dir;
+// Adicionando valores na arvore
+No *adicionar(No *raiz, int numero)
+{
+  if (numero < raiz->valor)
+  {
+    if (raiz->esquerda == NULL)
+      raiz->esquerda = criar(numero);
+    else
+      adicionar(raiz->esquerda, numero);
   }
-  return(p);
-}
-
-
-/* exclui a chave com valor igual a ch   */
-bool excluirAVL(PONT* raiz, TIPOCHAVE ch, bool* alterou){
-  PONT atual = *raiz;
-  if (!atual) {
-    *alterou = false;
-    return false;
+  else
+  {
+    if (raiz->direita == NULL)
+      raiz->direita = criar(numero);
+    else
+      adicionar(raiz->direita, numero);
   }
-  if (atual->chave == ch){
-    PONT substituto, pai_substituto;
-    if(!atual->esq || !atual->dir) { // tem zero ou um filho
-      if(atual->esq) substituto = atual->esq;
-      else substituto = atual->dir;
-      *raiz = substituto;
-      free(atual);
-      *alterou = true;
-      return true;
-    }
-    else {   // tem dois filhos
-      substituto = maiorAEsquerda(atual,&pai_substituto);
-      atual->chave = substituto->chave;
-      ch = substituto->chave; // continua o codigo excluindo o substituto
-    }
+
+  raiz->altura = maiorAltura(alturaNo(raiz->esquerda), alturaNo(raiz->direita)) + 1;
+  raiz = balanceamento(raiz);
+
+  return raiz;
+}
+
+No *removerNo(No *raiz, int numero)
+{
+  if (raiz == NULL)
+  {
+    printf("Valor nao encontrado\n");
+    return NULL;
   }
-  bool res;
-  if (ch > atual->chave) {
-    res = excluirAVL(&(atual->dir), ch, alterou);
-    printf("Excluir recursivo a direita: %i(%i)\n", atual->chave, atual->bal); 
-    if (*alterou){
-       switch (atual->bal){
-          case 1: atual->bal = 0;
-          return true;
-          case 0: atual->bal = -1;
-          *alterou = false;
-          return true;
-          case -1: *raiz = rotacaoL(atual);
-          if (atual->bal != 0) *alterou = false;
-          return true;
-       }
+  else
+  {
+    if (raiz->valor == numero)
+    {
+      if (raiz->esquerda == NULL && raiz->direita == NULL)
+      {
+        free(raiz);
+        printf("Folha removida: %d\n", numero);
+        return NULL;
+      }
+      else
+      {
+        if (raiz->esquerda != NULL && raiz->direita != NULL)
+        {
+          No *aux = raiz->esquerda;
+
+          while (aux->direita != NULL)
+            aux = aux->direita;
+          raiz->valor = aux->valor;
+          aux->valor = numero;
+
+          printf("Valor trocado: %d\n", numero);
+
+          raiz->esquerda = removerNo(raiz->esquerda, numero);
+          return raiz;
+        }
+        else
+        {
+          No *aux;
+          if (raiz->esquerda != NULL)
+            aux = raiz->esquerda;
+          else
+            aux = raiz->direita;
+          free(raiz);
+          printf("Elemento com 1 filho removido: %d\n", numero);
+          return aux;
+        }
+      }
     }
-  }else{
-    res = excluirAVL(&(atual->esq), ch, alterou);
-    printf("Excluir recursivo a esquerda: %i(%i)\n", atual->chave, atual->bal); 
-    if (*alterou){
-       switch (atual->bal){
-          case -1: atual->bal = 0;
-          return true;
-          case 0: atual->bal = 1;
-          *alterou = false;
-          return true;
-          case 1: *raiz = rotacaoR(atual);
-          if (atual->bal != 0) *alterou = false;
-          return true;
-       }
+    else
+    {
+      if (numero < raiz->valor)
+        raiz->esquerda = removerNo(raiz->esquerda, numero);
+      else
+        raiz->direita = removerNo(raiz->direita, numero);
     }
+    raiz->altura = maiorAltura(alturaNo(raiz->esquerda), alturaNo(raiz->direita)) + 1;
+    raiz = balanceamento(raiz);
+    return raiz;
   }
-  return res;
 }
 
+void imprimir(No *raiz, int nivel)
+{
+  int i;
+  if (raiz)
+  {
+    imprimir(raiz->direita, nivel + 1);
+    printf("\n");
 
+    for (i = 0; i < nivel; i++)
+      printf("\t");
 
-/* Rotações à direita (LL e LR) */
-void rotacaoL2(PONT *p){
-	printf("Rotacao a esquerda, problema no no: %i\n",(*p)->chave);
-	PONT u, v;
-	u = (*p)->esq;
-	if(u->bal == -1) {   // LL
-		(*p)->esq = u->dir;
-		u->dir = *p;
-		(*p)->bal = 0;
-		*p = u;
-	} else {  // LR
-		v = u->dir;
-		u->dir = v->esq;
-		v->esq = u;
-		(*p)->esq = v->dir;
-		v->dir = *p;
-		if(v->bal == -1)(*p)->bal = 1;
-		else (*p)->bal = 0;
-		if(v->bal == 1) u->bal = -1;
-		else u->bal = 0;
-		*p = v;
-	}
-	(*p)->bal = 0; // balanço final da raiz (p) da subarvore
+    printf("%d ", raiz->valor);
+    imprimir(raiz->esquerda, nivel + 1);
+  }
 }
 
-/* Rotações à esquerda (RR e RL)    */
-void rotacaoR2(PONT *p){
-	printf("Rotacao a direita, problema no no: %i\n",(*p)->chave);
-	PONT u, v;
-	u = (*p)->dir;
-	if(u->bal == 1) {   // RR
-		(*p)->dir = u->esq;
-		u->esq = *p;
-		(*p)->bal = 0;
-		*p = u;
-	} else {  // RL
-		v = u->esq;
-		u->esq = v->dir;
-		v->dir = u;
-		(*p)->dir = v->esq;
-		v->esq = *p;
-		if(v->bal == 1) (*p)->bal = -1;
-		else (*p)->bal = 0;
-		if(v->bal == -1) u->bal = 1;
-		else u->bal = 0;
-		*p = v;
-	}
-	(*p)->bal = 0; // balanço final da raiz (p) da subarvore
-}
+int main()
+{
+  No *raiz = NULL;
 
+  raiz = criar(50);
+  adicionar(raiz, 60);
+  adicionar(raiz, 80);
+  adicionar(raiz, 99);
+  adicionar(raiz, 30);
+  adicionar(raiz, 40);
 
+  imprimir(raiz, 0);
 
-/* Inserção AVL2: p é inicializado com raiz e *alterou com false */
-void inserirAVL2(PONT *pp, TIPOCHAVE ch, bool *alterou){
-	PONT p = *pp;
-	if(!p){
-		*pp = criarNovoNo(ch);
-		*alterou = true;
-	} else {
-		if(ch < p->chave) {
-            inserirAVL2(&(p->esq), ch, alterou);
-			if(*alterou)
-				switch (p->bal) {
-					case 1 : p->bal = 0;
-					*alterou = false;
-					break;
-					case 0 : p->bal = -1;
-					break;
-					case -1: rotacaoL2(pp);
-					*alterou = false;
-					break;
-				}
-		} else {
-			inserirAVL2(&(p->dir), ch, alterou);
-			if(*alterou)
-				switch (p->bal) {
-					case -1: p->bal = 0;
-					*alterou = false;
-					break;
-					case 0 : p->bal = 1;
-					break;
-					case 1 : rotacaoR2(pp);
-					*alterou = false;
-					break;
-				}
-		}
-	}
-}
+  removerNo(raiz, 99);
+  imprimir(raiz, 0);
 
-
-
-/* funcao auxiliar na destruicao (liberacao da memoria) de uma arvore */
-void destruirAux(PONT subRaiz){
-	if (subRaiz){
-		destruirAux(subRaiz->esq);
-		destruirAux(subRaiz->dir);
-		free(subRaiz);
-	}
-}
-
-/* libera toda memoria de uma arvore e coloca NULL no valor da raiz    */
-void destruirArvore(PONT * raiz){
-	destruirAux(*raiz);
-	*raiz = NULL;
-}
-
-
-/* inicializa arvore: raiz=NULL */
-void inicializar(PONT * raiz){
-	*raiz = NULL;
-}
-
-
-void travessiaAux(PONT p, int *niv, TIPOCHAVE ch, bool *achou) {
-	if(p) {
-		(*niv)++;// *niv = *niv + 1;
-		if(p->chave == ch) *achou = true;
-		else {
-			travessiaAux(p->esq, niv, ch, achou);
-			if(!(*achou)) travessiaAux(p->dir, niv, ch, achou);
-			if(!(*achou)) *niv = *niv - 1;
-		}
-	}
-}
-
-/* Retorna true e o nivel de uma chave (caso seja encontrada) e false caso 
-       contrario.                                                                */
-bool travessia(PONT p, int *niv, TIPOCHAVE ch) {
-	*niv = 0;
-	PONT temp = buscaBinaria(ch,p);
-	if (temp){
-		bool achou = false;
-		travessiaAux(p, niv, ch, &achou);
-		return true;
-	}
-	else return false;
+  return 0;
 }
