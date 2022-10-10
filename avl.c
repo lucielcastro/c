@@ -1,226 +1,160 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include<stdlib.h>
 
-typedef struct no
+typedef struct
 {
-  int valor, altura;
-  struct no *direita, *esquerda;
-} No;
+    int chave;
+    int altura;
+    struct Arv * esq;
+    struct Arv * dir;
+} Arv;
 
-No *criar(int numero)
+
+int altura (Arv * r)
 {
-  No *NovoNo = (No *)malloc(sizeof(No));
-
-  NovoNo->valor = numero;
-  NovoNo->esquerda = NULL;
-  NovoNo->direita = NULL;
-  NovoNo->altura = 0;
-  return NovoNo;
-}
-
-// Calculando a altura do maior No da arvore
-int maiorAltura(int num1, int num2)
-{
-  return (num1 > num2) ? num1 : num2;
-}
-
-// Calculando a altura do No da arvore
-int alturaNo(No *No)
-{
-  if (No == NULL)
-    return -1;
-  else
-    return No->altura;
-}
-
-// Balanceando a arvore
-int fatorBalanceamento(No *No)
-{
-  if (No)
-    return (alturaNo(No->esquerda) - alturaNo(No->direita));
-  else
-    return 0;
-}
-
-// Rotacao simples a esquerda
-No *rotacaoEsquerda(No *raiz)
-{
-  No *pai, *filho;
-
-  pai = raiz->direita;
-  filho = pai->esquerda;
-
-  pai->esquerda = raiz;
-  raiz->direita = filho;
-
-  raiz->altura = maiorAltura(alturaNo(raiz->esquerda), alturaNo(raiz->direita)) + 1;
-  pai->altura = maiorAltura(alturaNo(pai->esquerda), alturaNo(pai->direita)) + 1;
-
-  return pai;
-}
-
-// Rotacao simples a direita
-No *rotacaoDireita(No *raiz)
-{
-  No *pai, *filho;
-
-  pai = raiz->esquerda;
-  filho = pai->direita;
-
-  pai->direita = raiz;
-  raiz->esquerda = filho;
-
-  raiz->altura = maiorAltura(alturaNo(raiz->esquerda), alturaNo(raiz->direita)) + 1;
-  pai->altura = maiorAltura(alturaNo(pai->esquerda), alturaNo(pai->direita)) + 1;
-
-  return pai;
-}
-
-// Rotacao a direita e a esquerda
-No *rotacaoDireitaEsquerda(No *raiz)
-{
-  raiz->direita = rotacaoDireita(raiz->direita);
-  return rotacaoEsquerda(raiz);
-}
-
-// Rotacao a esquerda e a direita
-No *rotacaoEsquerdaDireita(No *raiz)
-{
-  raiz->esquerda = rotacaoEsquerda(raiz->esquerda);
-  return rotacaoDireita(raiz);
-}
-
-// Balanceamento da arvore
-No *balanceamento(No *raiz)
-{
-  int aux = fatorBalanceamento(raiz);
-
-  if (aux < -1 && fatorBalanceamento(raiz->direita) <= 0)
-    raiz = rotacaoEsquerda(raiz);
-  else if (aux > 1 && fatorBalanceamento(raiz->esquerda) >= 0)
-    raiz = rotacaoDireita(raiz);
-  else if (aux > 1 && fatorBalanceamento(raiz->esquerda) < 0)
-    raiz = rotacaoEsquerdaDireita(raiz);
-  else if (aux < -1 && fatorBalanceamento(raiz->direita) > 0)
-    raiz = rotacaoDireitaEsquerda(raiz);
-
-  return raiz;
-}
-
-// Adicionando valores na arvore
-No *adicionar(No *raiz, int numero)
-{
-  if (numero < raiz->valor)
-  {
-    if (raiz->esquerda == NULL)
-      raiz->esquerda = criar(numero);
-    else
-      adicionar(raiz->esquerda, numero);
-  }
-  else
-  {
-    if (raiz->direita == NULL)
-      raiz->direita = criar(numero);
-    else
-      adicionar(raiz->direita, numero);
-  }
-
-  raiz->altura = maiorAltura(alturaNo(raiz->esquerda), alturaNo(raiz->direita)) + 1;
-  raiz = balanceamento(raiz);
-
-  return raiz;
-}
-
-No *removerNo(No *raiz, int numero)
-{
-  if (raiz == NULL)
-  {
-    printf("Valor nao encontrado\n");
-    return NULL;
-  }
-  else
-  {
-    if (raiz->valor == numero)
-    {
-      if (raiz->esquerda == NULL && raiz->direita == NULL)
-      {
-        free(raiz);
-        printf("Folha removida: %d\n", numero);
-        return NULL;
-      }
-      else
-      {
-        if (raiz->esquerda != NULL && raiz->direita != NULL)
-        {
-          No *aux = raiz->esquerda;
-
-          while (aux->direita != NULL)
-            aux = aux->direita;
-          raiz->valor = aux->valor;
-          aux->valor = numero;
-
-          printf("Valor trocado: %d\n", numero);
-
-          raiz->esquerda = removerNo(raiz->esquerda, numero);
-          return raiz;
-        }
-        else
-        {
-          No *aux;
-          if (raiz->esquerda != NULL)
-            aux = raiz->esquerda;
-          else
-            aux = raiz->direita;
-          free(raiz);
-          printf("Elemento com 1 filho removido: %d\n", numero);
-          return aux;
-        }
-      }
-    }
+    if (r == NULL)
+        return 0;
     else
     {
-      if (numero < raiz->valor)
-        raiz->esquerda = removerNo(raiz->esquerda, numero);
-      else
-        raiz->direita = removerNo(raiz->direita, numero);
+        int ae = altura (r->esq);
+        int ad = altura (r->dir);
+        if (ae < ad) return ad + 1;
+        else return ae + 1;
     }
-    raiz->altura = maiorAltura(alturaNo(raiz->esquerda), alturaNo(raiz->direita)) + 1;
-    raiz = balanceamento(raiz);
-    return raiz;
-  }
 }
 
-void imprimir(No *raiz, int nivel)
+
+void roda_dir(Arv ** p)
 {
-  int i;
-  if (raiz)
-  {
-    imprimir(raiz->direita, nivel + 1);
-    printf("\n");
+    if((*p)->esq==NULL) return;
+    Arv * q = (*p) -> esq;
 
-    for (i = 0; i < nivel; i++)
-      printf("\t");
+    (*p) -> esq = q -> dir;
+    q -> dir = (*p);
 
-    printf("%d ", raiz->valor);
-    imprimir(raiz->esquerda, nivel + 1);
-  }
+    (*p)->altura=altura(*p);
+    q->altura=altura(q);
+
+    *p=q;
 }
 
-int main()
+void roda_esq(Arv ** p)
 {
-  No *raiz = NULL;
+    if((*p)->dir==NULL) return;
 
-  raiz = criar(50);
-  adicionar(raiz, 60);
-  adicionar(raiz, 80);
-  adicionar(raiz, 99);
-  adicionar(raiz, 30);
-  adicionar(raiz, 40);
+    Arv * q = (*p) -> dir;
 
-  imprimir(raiz, 0);
+    (*p) -> dir = q -> esq;
+    q -> esq = (*p);
 
-  removerNo(raiz, 99);
-  imprimir(raiz, 0);
+    (*p)->altura=altura(*p);
+    q->altura=altura(q);
 
-  return 0;
+    *p=q;
+}
+
+//retorna altura de um no nao nulo
+int getaltura(Arv* p)
+{
+    return p!=NULL ? p -> altura : 0;
+}
+
+void balanco(Arv ** p)
+{
+    Arv * aux;
+    int fb=getaltura((*p) -> esq ) - getaltura((*p) -> dir);
+
+    if  (fb>= 2 )
+    {
+        aux=(*p) -> esq;
+        fb=getaltura(aux -> esq)-getaltura(aux -> dir);
+        if (fb<0)
+            roda_esq(&((*p) -> esq));
+
+        roda_dir(p);
+
+    }
+    else if (fb <= -2 )
+    {
+        aux=(*p) -> dir;
+        fb=getaltura(aux -> esq)-getaltura(aux -> dir);
+        if (fb>0)
+            roda_dir(&((*p) -> dir));
+
+        roda_esq(p);
+    }
+
+
+}
+
+void insere(Arv ** raiz, int chave)
+{
+
+    if((*raiz)==NULL)
+    {
+        Arv * arv=(Arv*)malloc(sizeof(Arv));
+        arv->esq=NULL;
+        arv->dir=NULL;
+        arv->chave=chave;
+        *raiz=arv;
+    }
+    else if(chave<(*raiz)->chave)
+        insere(&((*raiz)->esq),chave);
+    else if(chave>(*raiz)->chave)
+        insere(&((*raiz)->dir),chave);
+
+    (*raiz)->altura=altura(*raiz);
+    balanco(raiz);
+}
+
+Arv * menorvalor(Arv * raiz)
+{
+    if(raiz->esq==NULL)
+        return raiz;
+    else
+        return menorvalor(raiz->esq);
+}
+
+void exclusao(Arv ** raiz,int chave)
+{
+
+    if ((*raiz) == NULL) return;
+
+    //se a chave a ser excluida for menor que a chave da raiz
+    //então ele vai ser excluido na subarvore esquerda
+    if (chave < (*raiz)->chave)
+        exclusao(&((*raiz)->esq), chave);
+
+    //se a chave a ser excluida for maior que a chave da raiz
+    //então ele vai ser excluido na subarvore direita
+    else if (chave > (*raiz)->chave)
+        exclusao(&((*raiz)->dir), chave);
+
+    // se a chave for o mesmo da raiz então será deletado
+    else
+    {
+        // nó com um ou nenhum filho
+        if ((*raiz)->esq == NULL)
+        {
+            Arv *temp = (*raiz)->dir;
+            free(*raiz);
+            *raiz=temp;
+            return;
+        }
+        else if ((*raiz)->dir == NULL)
+        {
+            Arv *temp = (*raiz)->esq;
+            free(*raiz);
+            *raiz=temp;
+            return;
+        }
+        // nó com dois filhos: pega o menor dos maiores
+        Arv* temp = menorvalor((*raiz)->dir);
+        // copia a chave do menor dos maiores para a raiz
+        (*raiz)->chave = temp->chave;
+
+        // exclui o menor dos maiores
+        exclusao(&((*raiz)->dir), temp->chave);
+    }
+    (*raiz)->altura=altura(*raiz);
+    balanco(raiz);
 }
